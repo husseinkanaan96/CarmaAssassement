@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carma Assessment</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+</head>
+<body>
+    <div class="container">
+        <img src="./Carma-logo-01.jpg" alt="carma">
+        <form method="POST" action="/api/creditCard/submit" id="myForm">
+            <div class="input-group">
+                <label>Card Holder Name</label>
+                <input type="text" name="cardHolderName" id="cardHolderName">
+            </div>
+            <div class="input-group">
+                <label>Card Number</label>
+                <input type="text" id="cardNumber" name="cardNumber" oninput="checkInputLimit(this, 16)">
+            </div>
+            <div class="input-group">
+                <label>Expiration Date</label>
+                <input type="month" name="expirationDate" id="expirationDate">
+            </div>
+            <div class="input-group">
+                <label>CVV</label>
+                <input type="number" id="cvv" name="cvv" oninput="checkInputLimit(this, 3)">
+            </div>
+            <div class="input-group-submit">
+                <button type="button" onclick="checkFormValidation()">Submit</button>
+                <span id="respMessage"></span>
+            </div>
+        </form>
+    </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    if (status === 'success') {
+        Swal.fire({
+            title: 'Notification',
+            text: 'Data inserted successfully!',
+            icon: 'success'
+        });
+    } else if (status === 'error') {
+        Swal.fire({
+            title: 'Notification',
+            text: 'Something Went Wrong!',
+            icon: 'error'
+        });
+    }
+
+    function checkInputLimit(input, limit) {
+        if (input.value.length > limit) {
+            input.value = input.value.slice(0, limit);
+        }
+    }
+
+    function checkFormValidation() {
+        let cardNumber = document.getElementById("cardNumber");
+        let cvv = document.getElementById("cvv");
+        let cardHolderName = document.getElementById("cardHolderName");
+        let expirationDate = document.getElementById("expirationDate");
+
+        let catchedErrors = 0;
+        let errorMessage = "";
+
+        if(cardNumber.value.length != 16 && cardNumber.value != "") {
+            catchedErrors += 1;
+            errorMessage += "Valid Card Number is Required,";
+        }
+
+        if(cardNumber.value == "") {
+            catchedErrors += 1;
+            errorMessage += " Card Number is Required,";
+        }
+        
+        if(cvv.value.length != 3 && cvv.value != "") {
+            catchedErrors += 1
+            errorMessage += " Valid CVV is Required,";
+        }
+
+        if(cvv.value == "") {
+            catchedErrors += 1;
+            errorMessage += " CVV is Required,";
+        }
+
+        if(cardHolderName.value.length == "") {
+            catchedErrors += 1
+            errorMessage += " Card Holder Name is Required,";
+        }
+
+        if(expirationDate.value.length == "") {
+            catchedErrors += 1
+            errorMessage += " Expiration Date is Required,";
+        }
+
+        errorMessage = errorMessage.slice(0, -1);
+
+        if(catchedErrors > 0) {
+            Swal.fire({
+                title: 'Notification',
+                text: errorMessage,
+                icon: 'error'
+            });
+            return;
+        } else {
+            document.getElementById("myForm").submit();
+        }
+    }
+</script>
+</html>
