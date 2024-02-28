@@ -10,7 +10,7 @@
 <body>
     <div class="container">
         <img src="./Carma-logo-01.jpg" alt="carma">
-        <form method="POST" action="/api/creditCard/submit" id="myForm">
+        <form id="myForm">
             <div class="input-group">
                 <label>Card Holder Name</label>
                 <input type="text" name="cardHolderName" id="cardHolderName">
@@ -21,7 +21,7 @@
             </div>
             <div class="input-group">
                 <label>Expiration Date</label>
-                <input type="month" name="expirationDate" id="expirationDate">
+                <input type="month" name="expirationDate" id="expirationDate" onchange="checkExpirationDate(this)">
             </div>
             <div class="input-group">
                 <label>CVV</label>
@@ -37,22 +37,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-    if (status === 'success') {
-        Swal.fire({
-            title: 'Notification',
-            text: 'Data inserted successfully!',
-            icon: 'success'
-        });
-    } else if (status === 'error') {
-        Swal.fire({
-            title: 'Notification',
-            text: 'Something Went Wrong!',
-            icon: 'error'
-        });
-    }
-
     function checkInputLimit(input, limit) {
         if (input.value.length > limit) {
             input.value = input.value.slice(0, limit);
@@ -65,34 +49,57 @@
         let cardHolderName = document.getElementById("cardHolderName");
         let expirationDate = document.getElementById("expirationDate");
 
+        console.log("isValidCardNumber(cardNumber) >>>>>>>>>>>> ", isValidCardNumber(cardNumber.value));
+        console.log("isValidCVV(cvv) >>>>>>>>>>>> ", isValidCVV(cvv.value));
+
         let catchedErrors = 0;
         let errorMessage = "";
 
+        // Check if card number is not empty
+        // Check if card number is exactly equal to 16 digits
+        // Check if card number meets the requirements of Luhn Algorithm
         if(cardNumber.value.length != 16 && cardNumber.value != "") {
             catchedErrors += 1;
             errorMessage += "Valid Card Number is Required,";
         }
 
+        if(cardNumber.value.length == 16 && cardNumber.value != "" && !isValidCardNumber(cardNumber.value)) {
+            catchedErrors += 1;
+            errorMessage += "Valid Card Number is Required,";
+        }
+
+        // Check if card number is empty
         if(cardNumber.value == "") {
             catchedErrors += 1;
             errorMessage += " Card Number is Required,";
         }
         
+        // Check if CVV is not empty
+        // Check if CVV is exactly equal to 3 digits
+        // Check if CVV meets the requirements of Luhn Algorithm
         if(cvv.value.length != 3 && cvv.value != "") {
             catchedErrors += 1
             errorMessage += " Valid CVV is Required,";
         }
 
+        if(cvv.value.length == 3 && cvv.value != "" && !isValidCVV(cvv.value)) {
+            catchedErrors += 1
+            errorMessage += " Valid CVV is Required,";
+        }
+
+        // Check if CVV is empty
         if(cvv.value == "") {
             catchedErrors += 1;
             errorMessage += " CVV is Required,";
         }
 
+        // Check if card holder name is empty
         if(cardHolderName.value.length == "") {
             catchedErrors += 1
             errorMessage += " Card Holder Name is Required,";
         }
 
+        // Check if expiration date is empty
         if(expirationDate.value.length == "") {
             catchedErrors += 1
             errorMessage += " Expiration Date is Required,";
@@ -108,8 +115,80 @@
             });
             return;
         } else {
-            document.getElementById("myForm").submit();
+            var formData = new FormData(document.getElementById('myForm'));
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/submitData", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        Swal.fire({
+                            title: 'Notification',
+                            text: 'Data inserted successfully!',
+                            icon: 'success'
+                        });
+                        document.getElementById("myForm").reset();
+                    } else {
+                        Swal.fire({
+                            title: 'Notification',
+                            text: 'Something Went Wrong!',
+                            icon: 'error'
+                        });
+                    }
+                }
+            };
+            xhr.send(JSON.stringify(Object.fromEntries(formData.entries())));
         }
+    }
+
+    function checkExpirationDate(input) {
+        var currentDate = new Date();
+        var inputMonthYearString = input.value;
+        var inputDate = new Date(inputMonthYearString + "-01"); // Appending "-01" for the first day of the month
+
+        if (inputDate < currentDate) {
+            Swal.fire({
+                title: 'Notification',
+                text: 'Input month is smaller than current month',
+                icon: 'error'
+            });
+        }
+    }
+
+    function isValidCVV(cvv) {
+        cvv = cvv.toString();
+        cvv = cvv.split('').reverse().join('');
+        let sum = 0;
+        for (let i = 0; i < cvv.length; i++) {
+            let digit = parseInt(cvv[i]);
+            if (i % 2 === 1) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit -= 9;
+                }
+            }
+            sum += digit;
+        }
+        return sum % 10 === 0;
+    }
+
+    function isValidCardNumber(cardNumber) {
+        if (!cardNumber) return false;
+        let sum = 0;
+        let isSecondDigit = false;
+        for (let i = cardNumber.length - 1; i >= 0; i--) {
+            let digit = parseInt(cardNumber.charAt(i));
+            if (isSecondDigit) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit -= 9;
+                }
+            }
+            sum += digit;
+            isSecondDigit = !isSecondDigit;
+        }
+        return sum % 10 === 0;
     }
 </script>
 </html>
